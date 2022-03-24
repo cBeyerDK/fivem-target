@@ -6,7 +6,7 @@ window.addEventListener('message', function(event) {
         
         $('.target-wrapper').show();
 
-        $(".target-eye").css("color", "black");
+        $(".target-eye").css("color", "white");
     } else if (item.type == 'closeTarget') {
         $(".target-label").html("");
 
@@ -26,7 +26,7 @@ window.addEventListener('message', function(event) {
             var c = count;
             $(".target-label").append("<div id='target-"+count+"'<li>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp"+opt.label+"</li></div>");
             $("#target-"+count).hover((e)=> {
-                $("#target-"+c).css("color",e.type === "mouseenter"?"rgb(30,144,255)":"white")
+                $("#target-"+c).css("color",e.type === "mouseenter"?"#00c6e4":"white")
             })
             
             $("#target-"+count+"").css("padding-top", "6px");
@@ -36,11 +36,11 @@ window.addEventListener('message', function(event) {
           });
         });
 
-        $(".target-eye").css("color", "rgb(30,144,255)");
+        $(".target-eye").css("color", "#00c6e4");
     } else if (item.type == 'leftTarget') {
         $(".target-label").html("");
 
-        $(".target-eye").css("color", "black");
+        $(".target-eye").css("color", "white");
     }
 });
 

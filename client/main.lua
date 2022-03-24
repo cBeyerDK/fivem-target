@@ -11,8 +11,12 @@ Citizen.CreateThread(function()
       DisableControlAction(0,24,true)
       DisableControlAction(0,69,true)
       DisableControlAction(0,92,true)
+      DisableControlAction(0,140,true)
+      DisableControlAction(0,141,true)
       DisableControlAction(0,142,true)
       DisableControlAction(0,257,true)
+      DisableControlAction(0,263,true)
+      DisableControlAction(0,264,true)
       DisableControlAction(0,346,true)
 
       HandleFocus()
@@ -41,17 +45,27 @@ function HandleFocus()
 
   for k,v in ipairs(allTargets) do
     if v.typeof == "point" then
-      if #(v.point - endCoords) <= v.interactDist and #(v.point - pos) <= v.interactDist then
-        targets[v.name] = v
-        if not activeTargets[v.name] then
-          updateTargets = true
+        if v.point then
+            local intDist = v.interactDist
+            if v.name:find('mf_doors_door') then
+              if IsPedInAnyVehicle(PlayerPedId(), false) then
+                pos = GetEntityCoords(GetVehiclePedIsIn(PlayerPedId(), false))
+                if v.vars.interact_in_veh and intDist < 6.0 then intDist = 6.0 end
+              end
+            end
+
+            if #(v.point - endCoords) <= intDist and #(v.point - pos) <= intDist then
+                targets[v.name] = v
+                if not activeTargets[v.name] then
+                updateTargets = true
+                end
+            else
+                if activeTargets[v.name] then
+                activeTargets[v.name] = nil
+                updateTargets = true
+                end
+            end
         end
-      else
-        if activeTargets[v.name] then
-          activeTargets[v.name] = nil
-          updateTargets = true
-        end
-      end
     elseif v.typeof == "model" then
       if hitValidModel then 
         local model = GetEntityModel(entityHit)
@@ -109,27 +123,30 @@ function HandleFocus()
       end
     elseif v.typeof == "entity" then
       if entityHit > 0 then
-        if v.entId and v.entId == entityHit
-        or v.netId and v.netId == NetworkGetNetworkIdFromEntity(entityHit) 
-        then
-          local dist = #(GetEntityCoords(entityHit) - endCoords)
-          if dist <= v.interactDist and #(pos - GetEntityCoords(entityHit)) <= v.interactDist then
-            targets[v.name] = v
-            v.entityHit = entityHit
-            if not activeTargets[v.name] then
-              updateTargets = true
+        if DoesEntityExist(entityHit) then
+            if v.netId then v.entId = NetworkGetEntityFromNetworkId(v.netId) end
+            if v.entId and v.entId == entityHit then
+                local dist = #(GetEntityCoords(entityHit) - endCoords)
+                if dist <= v.interactDist and #(pos - GetEntityCoords(entityHit)) <= v.interactDist then
+                    targets[v.name] = v
+                    v.entityHit = entityHit
+                    if not activeTargets[v.name] then
+                        updateTargets = true
+                    end
+                else
+                    if activeTargets[v.name] then
+                        activeTargets[v.name] = nil
+                        updateTargets = true
+                    end
+                end
+            else
+                if activeTargets[v.name] then
+                    activeTargets[v.name] = false
+                    updateTargets = true
+                end
             end
-          else
-            if activeTargets[v.name] then
-              activeTargets[v.name] = nil
-              updateTargets = true
-            end
-          end
         else
-          if activeTargets[v.name] then
-            activeTargets[v.name] = false
-            updateTargets = true
-          end
+            print('Entityhit doesn\'t exist')
         end
       else
         if activeTargets[v.name] then
@@ -188,19 +205,19 @@ function HandleClick()
 end
 
 exports('AddTargetEntity',function(opts)
-  if not opts or not opts.name or not opts.label or not opts.netId or not opts.options then error("Invalid opts for AddTargetEntity",1) return end
-  table.insert(allTargets,{
-    typeof        = "entity",
-    name          = opts.name,
-    label         = opts.label,
-    icon          = opts.icon or "fas fa-question",
-    netId         = opts.netId,
-    interactDist  = opts.interactDist or 2.5,
-    onInteract    = opts.onInteract,
-    options       = opts.options,
-    vars          = opts.vars,
-    resource      = GetInvokingResource()
-  })  
+    if not opts or not opts.name or not opts.label or not opts.netId or not opts.options then error("Invalid opts for AddTargetEntity",1) return end
+    table.insert(allTargets,{
+        typeof        = "entity",
+        name          = opts.name,
+        label         = opts.label,
+        icon          = opts.icon or "fas fa-question",
+        netId         = opts.netId,
+        interactDist  = opts.interactDist or 2.5,
+        onInteract    = opts.onInteract,
+        options       = opts.options,
+        vars          = opts.vars,
+        resource      = GetInvokingResource()
+    })
 end)
 
 exports('AddTargetLocalEntity',function(opts)
@@ -271,9 +288,10 @@ exports('AddPolyZone',function(opts)
   if not opts or not opts.name or not opts.label or not opts.options then error("Invalid opts for AddPolyZone",1) return end
 
   local name = opts.name
+  local index = #allTargets+1
   local isInside = opts.isInside or false
 
-  local t = {
+  allTargets[index] = {
     typeof        = "polyzone",
     name          = opts.name,
     label         = opts.label,
@@ -284,11 +302,15 @@ exports('AddPolyZone',function(opts)
     vars          = opts.vars,
     resource      = GetInvokingResource()
   }
-    
-  table.insert(allTargets,t)
 
-  return (function(inside)    
-    t.inside = inside
+  return (function(inside)
+    if not allTargets[index] then
+      return
+    end
+    
+    if allTargets[index].name == name then
+      allTargets[index].inside = inside
+    end
   end)
 end)
 

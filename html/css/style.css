@@ -32,10 +32,10 @@
 .header {
     font-weight: bold;
     font-family: sans-serif;
-    color: rgb(30,144,255);   
+    color: #00c6e4;   
     font-size: 1.6vh; 
 }
 
 .target-icon {
-    color: rgb(30,144,255);
+    color: #00c6e4;
 }
