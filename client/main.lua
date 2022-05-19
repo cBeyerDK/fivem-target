@@ -121,6 +121,33 @@ function HandleFocus()
           end
         end
       end
+    elseif v.typeof == 'player' then
+        if entityHit > 0 then
+            if DoesEntityExist(entityHit) and IsEntityAPed(entityHit) then
+                print(IsPedAPlayer(entityHit), GetPedIndexFromEntityIndex(entityHit), entityHit)
+            end
+
+            if DoesEntityExist(entityHit) and IsEntityAPed(entityHit) and IsPedAPlayer(entityHit) then
+                local dist = #(GetEntityCoords(entityHit) - endCoords)
+                if dist <= v.interactDist and #(pos - GetEntityCoords(entityHit)) <= v.interactDist then
+                    targets[v.name] = v
+                    v.entityHit = entityHit
+                    if not activeTargets[v.name] then
+                        updateTargets = true
+                    end
+                else
+                    if activeTargets[v.name] then
+                        activeTargets[v.name] = nil
+                        updateTargets = true
+                    end
+                end
+            end
+        else
+            if activeTargets[v.name] then
+                activeTargets[v.name] = false
+                updateTargets = true
+            end
+        end
     elseif v.typeof == "entity" then
       if entityHit > 0 then
         if DoesEntityExist(entityHit) then
@@ -203,6 +230,21 @@ function HandleClick()
     })
   end
 end
+
+exports('AddTargetPlayer',function(opts)
+    if not opts or not opts.name or not opts.label or not opts.options then error("Invalid opts for AddTargetPlayer",1) return end
+    table.insert(allTargets,{
+        typeof        = "player",
+        name          = opts.name,
+        label         = opts.label,
+        icon          = opts.icon or "fas fa-question",
+        interactDist  = opts.interactDist or 2.5,
+        onInteract    = opts.onInteract,
+        options       = opts.options,
+        vars          = opts.vars,
+        resource      = GetInvokingResource()
+    })
+end)
 
 exports('AddTargetEntity',function(opts)
     if not opts or not opts.name or not opts.label or not opts.netId or not opts.options then error("Invalid opts for AddTargetEntity",1) return end
@@ -355,7 +397,7 @@ RegisterCommand('-openTargetMenu', function()
   end
 end)
 
-RegisterKeyMapping("+openTargetMenu", "Focus Target", "keyboard", "TAB")
+RegisterKeyMapping("+openTargetMenu", "Focus Target", "keyboard", "OEM_102")
 
 RegisterNUICallback('closed',function()
   SetNuiFocus(false,false)
